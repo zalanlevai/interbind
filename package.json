@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "lint": "tslint -p tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -31,6 +32,7 @@
   },
   "homepage": "https://github.com/zalanlevai/interbind#readme",
   "devDependencies": {
+    "tslint": "^5.12.1",
     "typescript": "^3.3.3"
   },
   "dependencies": {
