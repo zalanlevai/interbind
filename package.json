@@ -1,0 +1,28 @@
+{
+  "name": "interbind",
+  "version": "0.1.0",
+  "description": "A binding and event library useful for implementing the MVC pattern",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zalanlevai/interbind.git"
+  },
+  "keywords": [
+    "bind",
+    "binding",
+    "bound",
+    "event",
+    "dispatcher",
+    "handler",
+    "mvc"
+  ],
+  "author": "Zalán Bálint Lévai <zalan.levai@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zalanlevai/interbind/issues"
+  },
+  "homepage": "https://github.com/zalanlevai/interbind#readme"
+}
