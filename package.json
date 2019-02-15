@@ -2,8 +2,13 @@
   "name": "interbind",
   "version": "0.1.0",
   "description": "A binding and event library useful for implementing the MVC pattern",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
