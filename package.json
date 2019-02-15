@@ -27,5 +27,8 @@
   "homepage": "https://github.com/zalanlevai/interbind#readme",
   "devDependencies": {
     "typescript": "^3.3.3"
+  },
+  "dependencies": {
+    "reflect-metadata": "^0.1.13"
   }
 }
