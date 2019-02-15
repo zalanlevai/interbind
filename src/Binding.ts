@@ -170,11 +170,11 @@ export abstract class BindingService {
     /**
      * The default bind transform used for binding operations if nothing else is specified.
      */
-    public static defaultBindTransform: BindTransform<any, any> = null;
+    public static defaultBindTransform?: BindTransform<any, any> = undefined;
     /**
      * The default bind action used for binding operations if nothing else is specified.
      */
-    public static defaultBindAction: BindAction = ReactBind;
+    public static defaultBindAction?: BindAction = ReactBind;
 
     /**
      * Initializes the Binding Service on this class instance. Required for activating all binding related decorators.
@@ -270,6 +270,7 @@ export abstract class BindingService {
             return val;
         }
         const setter = function(this: any, val: any) {
+            // @ts-ignore
             if (bindProps.bindMode == BindModes.TwoWay) {
                 const bindTargetBackingFieldKey = BindingService.getBindBackingFieldKey(bindTargetKey);
                 bindTarget[bindTargetBackingFieldKey] = val;
@@ -288,10 +289,13 @@ export abstract class BindingService {
 
         const event: BindEventDispatcher<any> = BindingService.getBindEventDispatcher(bindTarget, bindTargetKey);
         event.on(target, function(sender, e) {
+            // @ts-ignore
             const val = bindProps.bindTransform ? bindProps.bindTransform(e.newValue) : e.newValue;
             target[backingFieldKey] = val;
 
+            // @ts-ignore
             if (bindProps.bindAction)
+                // @ts-ignore
                 bindProps.bindAction(target, key);
         });
     }
@@ -322,7 +326,7 @@ export abstract class BindingService {
             enumerable: true,
             configurable: true
         });
-        
+
         const eventKey = BindingService.getBindEventDispatcherKey(key);
         Object.defineProperty(target, eventKey, {
             writable: true,
