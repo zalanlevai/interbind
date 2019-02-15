@@ -24,5 +24,8 @@
   "bugs": {
     "url": "https://github.com/zalanlevai/interbind/issues"
   },
-  "homepage": "https://github.com/zalanlevai/interbind#readme"
+  "homepage": "https://github.com/zalanlevai/interbind#readme",
+  "devDependencies": {
+    "typescript": "^3.3.3"
+  }
 }
