@@ -33,25 +33,25 @@ const BOUND_METADATA: string = "__BindingMetadata";
 /**
  * Metadata object stored for each bindable property.
  */
-interface BindableMetadata {
+interface IBindableMetadata {
     key: string | symbol;
     type: any;
 }
 /**
  * Metadata object stored for each bound property.
  */
-interface BindMetadata {
+interface IBindMetadata {
     key: string | symbol;
     type: any;
     bindTarget: any;
     bindTargetKey: string | symbol;
-    bindProps?: BindProps;
+    bindProps?: IBindProps;
 }
 
 /**
  * Event of bind events.
  */
-interface BindEvent<E> {
+interface IBindEvent<E> {
     /**
      * The object subscribed to the event.
      */
@@ -64,26 +64,26 @@ interface BindEvent<E> {
 /**
  * Event handler of bind events.
  */
-type BindEventHandler<E> = (sender: any, event: BindEventArgs<E>) => void;
+type BindEventHandler<E> = (sender: any, event: IBindEventArgs<E>) => void;
 /**
  * Event arguments of bind events.
  */
-interface BindEventArgs<T> {
+interface IBindEventArgs<T> {
     newValue: T;
 }
 /**
  * Event dispatcher of bind events.
  */
 class BindEventDispatcher<E> {
-    private events: BindEvent<E>[] = [];
+    private events: Array<IBindEvent<E>> = [];
 
     /**
      * Invoke an event on all subscribers.
      * @param sender The object sending the event.
      * @param event The event being sent.
      */
-    public invoke(sender: any, event: BindEventArgs<E>): void {
-        for (let h of this.events)
+    public invoke(sender: any, event: IBindEventArgs<E>): void {
+        for (const h of this.events)
             h.handler(sender, event);
     }
     /**
@@ -92,8 +92,8 @@ class BindEventDispatcher<E> {
      * @param except The object to not invoke the event on.
      * @param event The event being sent.
      */
-    public invokeExcept(sender: any, except: any, event: BindEventArgs<E>): void {
-        for (let h of this.events)
+    public invokeExcept(sender: any, except: any, event: IBindEventArgs<E>): void {
+        for (const h of this.events)
             if (h.subscriber !== except)
                 h.handler(sender, event);
     }
@@ -144,7 +144,7 @@ export type BindTransform<TIn, TOut> = (value: TIn) => TOut;
 /**
  * Properties which describe the behaviour of the binding process.
  */
-export interface BindProps {
+export interface IBindProps {
     /**
      * The mode with which to bind the properties. Defaults to one-way.
      */
@@ -187,13 +187,13 @@ export abstract class BindingService {
             Object.getOwnPropertyNames(Object.getPrototypeOf(target))
         );
 
-        propertyKeys.forEach(key => {
-            const bindable: BindableMetadata = Reflect.getMetadata(BINDABLE_METADATA, target, key);
+        propertyKeys.forEach((key) => {
+            const bindable: IBindableMetadata = Reflect.getMetadata(BINDABLE_METADATA, target, key);
             if (bindable) {
                 BindingService.makeBindableAs(bindable.type, target, bindable.key);
             }
 
-            const binding: BindMetadata = Reflect.getMetadata(BOUND_METADATA, target, key);
+            const binding: IBindMetadata = Reflect.getMetadata(BOUND_METADATA, target, key);
             if (binding) {
                 BindingService.bindAs(binding.type, target, binding.key,
                     binding.bindTarget, binding.bindTargetKey,
@@ -210,7 +210,7 @@ export abstract class BindingService {
      * @param bindTargetKey The target roperty key of the binding relation.
      * @param bindProps The properties which describe the behaviour of the binding process.
      */
-    public static bind(target: any, key: string | symbol, bindTarget: any, bindTargetKey: string | symbol, bindProps?: BindProps) {
+    public static bind(target: any, key: string | symbol, bindTarget: any, bindTargetKey: string | symbol, bindProps?: IBindProps) {
         BindingService.bindAs(null, target, key, bindTarget, bindTargetKey, bindProps);
     }
     /**
@@ -222,7 +222,7 @@ export abstract class BindingService {
      * @param bindTargetKey The target roperty key of the binding relation.
      * @param bindProps The properties which describe the behaviour of the binding process.
      */
-    public static bindAs(type: any, target: any, key: string | symbol, bindTarget: any, bindTargetKey: string | symbol, bindProps?: BindProps) {
+    public static bindAs(type: any, target: any, key: string | symbol, bindTarget: any, bindTargetKey: string | symbol, bindProps?: IBindProps) {
         if (!bindProps) bindProps = { };
         if (bindProps.bindMode === undefined) bindProps.bindMode = BindingService.defaultBindMode;
         if (bindProps.bindTransform === undefined) bindProps.bindTransform = BindingService.defaultBindTransform;
@@ -234,11 +234,11 @@ export abstract class BindingService {
             throw new Error(BIND_TARGET_IS_NOT_BINDABLE_MESSAGE);
         if (!BindingService.isInitialisedBindable(bindTarget, bindTargetKey))
             throw new Error(BIND_TARGET_IS_NOT_INITIALISED_MESSAGE);
-        if (bindProps.bindMode == BindModes.TwoWay && bindProps.bindTransform)
+        if (bindProps.bindMode === BindModes.TwoWay && bindProps.bindTransform)
             throw new Error(TWO_WAY_BINDINGS_DO_NOT_SUPPORT_BIND_TRANSFORMS_MESSAGE);
 
-        const metadata: BindMetadata = Reflect.getMetadata(BOUND_METADATA, target, key);
-        const bindTargetMetadata: BindableMetadata = Reflect.getMetadata(BINDABLE_METADATA, bindTarget, bindTargetKey);
+        const metadata: IBindMetadata = Reflect.getMetadata(BOUND_METADATA, target, key);
+        const bindTargetMetadata: IBindableMetadata = Reflect.getMetadata(BINDABLE_METADATA, bindTarget, bindTargetKey);
 
         type = metadata && metadata.type ? metadata.type : type;
         const bindType = bindTargetMetadata.type;
@@ -268,17 +268,17 @@ export abstract class BindingService {
         const getter = function(this: any) {
             const val = this[backingFieldKey];
             return val;
-        }
+        };
         const setter = function(this: any, val: any) {
             // @ts-ignore
-            if (bindProps.bindMode == BindModes.TwoWay) {
+            if (bindProps.bindMode === BindModes.TwoWay) {
                 const bindTargetBackingFieldKey = BindingService.getBindBackingFieldKey(bindTargetKey);
                 bindTarget[bindTargetBackingFieldKey] = val;
 
-                const event: BindEventDispatcher<any> = BindingService.getBindEventDispatcher(bindTarget, bindTargetKey);
-                event.invoke(this, { newValue: val });
+                const bindEvent: BindEventDispatcher<any> = BindingService.getBindEventDispatcher(bindTarget, bindTargetKey);
+                bindEvent.invoke(this, { newValue: val });
             }
-        }
+        };
 
         Object.defineProperty(target, key, {
             get: getter,
@@ -288,7 +288,7 @@ export abstract class BindingService {
         });
 
         const event: BindEventDispatcher<any> = BindingService.getBindEventDispatcher(bindTarget, bindTargetKey);
-        event.on(target, function(sender, e) {
+        event.on(target, (sender, e) => {
             // @ts-ignore
             const val = bindProps.bindTransform ? bindProps.bindTransform(e.newValue) : e.newValue;
             target[backingFieldKey] = val;
@@ -315,13 +315,13 @@ export abstract class BindingService {
      * @param key The property key of the property to make bindable.
      */
     public static makeBindableAs(type: any, target: any, key: string | symbol) {
-        const val = target[key];
+        const value = target[key];
 
         delete target[key];
 
         const backingFieldKey = BindingService.getBindBackingFieldKey(key);
         Object.defineProperty(target, backingFieldKey, {
-            value: val,
+            value,
             writable: true,
             enumerable: true,
             configurable: true
@@ -370,9 +370,9 @@ export abstract class BindingService {
             }
         }
 
-        const metadata: BindableMetadata = {
-            key: key,
-            type: type
+        const metadata: IBindableMetadata = {
+            key,
+            type
         };
         Reflect.defineMetadata(BINDABLE_METADATA, metadata, target, key);
     }
@@ -386,7 +386,7 @@ export abstract class BindingService {
      * @param bindTargetKey The property key of the property to bind to.
      * @param bindProps The properties which describe the behaviour of the binding process.
      */
-    public static markBind(target: any, key: string | symbol, type: any, bindTarget: any, bindTargetKey: string | symbol, bindProps?: BindProps) {
+    public static markBind(target: any, key: string | symbol, type: any, bindTarget: any, bindTargetKey: string | symbol, bindProps?: IBindProps) {
         type = Reflect.getMetadata("design:type", target, key) || type;
         if (!type) {
             if (!HAS_WARNED_ABOUT_MISSING_TYPE_ANNOTATIONS) {
@@ -396,16 +396,12 @@ export abstract class BindingService {
         }
 
         bindProps = bindProps || { bindMode: undefined, bindTransform: undefined, bindAction: undefined };
-        const metadata: BindMetadata = {
-            key: key,
-            type: type,
-            bindTarget: bindTarget,
-            bindTargetKey: bindTargetKey,
-            bindProps: {
-                bindMode: bindProps.bindMode,
-                bindTransform: bindProps.bindTransform,
-                bindAction: bindProps.bindAction
-            }
+        const metadata: IBindMetadata = {
+            key,
+            type,
+            bindTarget,
+            bindTargetKey,
+            bindProps
         };
         Reflect.defineMetadata(BOUND_METADATA, metadata, target, key);
     }
@@ -424,7 +420,7 @@ export abstract class BindingService {
      * @param key The target property key to check for.
      */
     private static isBindable(target: any, key: string | symbol): boolean {
-        const metadata: BindableMetadata = Reflect.getMetadata(BINDABLE_METADATA, target, key);
+        const metadata: IBindableMetadata = Reflect.getMetadata(BINDABLE_METADATA, target, key);
         return !!metadata;
     }
     /**
@@ -478,9 +474,9 @@ export function Bindable(target: any, key: string | symbol): void {
  * @param key The property key of the property to make bindable.
  */
 export function BindableAs(type: any): (target: any, key: string | symbol) => void {
-    return function(target: any, key: string | symbol): void {
+    return (target: any, key: string | symbol) => {
         return BindingService.markBindable(target, key, type);
-    }
+    };
 }
 
 /**
@@ -489,6 +485,7 @@ export function BindableAs(type: any): (target: any, key: string | symbol) => vo
  * @param bindTargetKey The target property key of the property to bind to.
  * @param bindMode The mode with which to bind the properties. Defaults to one-way.
  */
+// tslint:disable:unified-signatures
 export function Bind(bindTarget: any, bindTargetKey: string, bindMode?: BindModes): (target: any, key: string) => void;
 /**
  * Denotes a binding between the annotated property and the specified property.
@@ -496,16 +493,18 @@ export function Bind(bindTarget: any, bindTargetKey: string, bindMode?: BindMode
  * @param bindTargetKey The target property key of the property to bind to.
  * @param bindProps The properties which describe the behaviour of the binding process.
  */
-export function Bind(bindTarget: any, bindTargetKey: string, bindProps?: BindProps): (target: any, key: string) => void;
-export function Bind(bindTarget: any, bindTargetKey: string, bindMode_or_bindProps?: BindModes | BindProps) {
-    return function(target: any, key: string): void {
-        if (typeof bindMode_or_bindProps === "number") {
-            BindingService.markBind(target, key, null, bindTarget, bindTargetKey, { bindMode: bindMode_or_bindProps as BindModes });
+export function Bind(bindTarget: any, bindTargetKey: string, bindProps?: IBindProps): (target: any, key: string) => void;
+export function Bind(bindTarget: any, bindTargetKey: string, bindArgs?: BindModes | IBindProps) {
+    return (target: any, key: string) => {
+        if (typeof bindArgs === "number") {
+            BindingService.markBind(target, key, null, bindTarget, bindTargetKey, { bindMode: bindArgs as BindModes });
         } else {
-            BindingService.markBind(target, key, null, bindTarget, bindTargetKey, bindMode_or_bindProps as BindProps);
+            BindingService.markBind(target, key, null, bindTarget, bindTargetKey, bindArgs as IBindProps);
         }
-    }
+    };
 }
+// tslint:enable
+// tslint:disable:unified-signatures
 /**
  * Denotes a binding between the annotated property and the specified property (with manual type assertion).
  * @param type The type of the property to bind.
@@ -521,16 +520,17 @@ export function BindAs(type: any, bindTarget: any, bindTargetKey: string, bindMo
  * @param bindTargetKey The target property key of the property to bind to.
  * @param bindProps The properties which describe the behaviour of the binding process.
  */
-export function BindAs(type: any, bindTarget: any, bindTargetKey: string, bindProps?: BindProps): (target: any, key: string | symbol) => void;
-export function BindAs(type: any, bindTarget: any, bindTargetKey: string, bindMode_or_bindProps?: BindModes | BindProps) {
-    return function(target: any, key: string | symbol): void {
-        if (typeof bindMode_or_bindProps === "number") {
-            BindingService.markBind(target, key, type, bindTarget, bindTargetKey, { bindMode: bindMode_or_bindProps as BindModes });
+export function BindAs(type: any, bindTarget: any, bindTargetKey: string, bindProps?: IBindProps): (target: any, key: string | symbol) => void;
+export function BindAs(type: any, bindTarget: any, bindTargetKey: string, bindArgs?: BindModes | IBindProps) {
+    return (target: any, key: string | symbol) => {
+        if (typeof bindArgs === "number") {
+            BindingService.markBind(target, key, type, bindTarget, bindTargetKey, { bindMode: bindArgs as BindModes });
         } else {
-            BindingService.markBind(target, key, type, bindTarget, bindTargetKey, bindMode_or_bindProps as BindProps);
+            BindingService.markBind(target, key, type, bindTarget, bindTargetKey, bindArgs as IBindProps);
         }
-    }
+    };
 }
+// tslint: enable
 
 /**
  * The binding operation used for React components. The default implementation of BindAction.

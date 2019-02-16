@@ -3,7 +3,7 @@ export {
     BindAction,
     BindAs,
     BindModes,
-    BindProps,
+    IBindProps,
     BindTransform,
     Bindable,
     BindableAs,
