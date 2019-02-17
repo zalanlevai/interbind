@@ -15,8 +15,6 @@ const BIND_TARGET_IS_MISSING_MESSAGE: string =
     `The bind target is missing.`;
 const BIND_TARGET_IS_NOT_BINDABLE_MESSAGE: string =
     `The bind target must be marked with the @Bindable decorator.`;
-const BIND_TARGET_IS_NOT_INITIALISED_MESSAGE: string =
-    `The bind target's @Bindable decorator must be activated with the BindingService.init() call on the instance of the property to be bound.`;
 const MISMATCHED_BINDING_TYPE_MESSAGE: string =
     `The types of the binding do not match. Check if the bind is correct, use type assertion or consider using a BindTransform.`;
 const TWO_WAY_BINDINGS_DO_NOT_SUPPORT_BIND_TRANSFORMS_MESSAGE: string =
@@ -188,11 +186,6 @@ export abstract class BindingService {
         );
 
         propertyKeys.forEach((key) => {
-            const bindable: IBindableMetadata = Reflect.getMetadata(BINDABLE_METADATA, target, key);
-            if (bindable) {
-                BindingService.makeBindableAs(bindable.type, target, bindable.key);
-            }
-
             const binding: IBindMetadata = Reflect.getMetadata(BOUND_METADATA, target, key);
             if (binding) {
                 BindingService.bindAs(binding.type, target, binding.key,
@@ -200,6 +193,13 @@ export abstract class BindingService {
                     binding.bindProps);
             }
         });
+    }
+
+    public static initBindable(target: any, key: string | symbol) {
+        const bindable: IBindableMetadata = Reflect.getMetadata(BINDABLE_METADATA, target, key);
+        if (!bindable) return;
+
+        BindingService.makeBindableAs(bindable.type, target, bindable.key);
     }
 
     /**
@@ -233,7 +233,7 @@ export abstract class BindingService {
         if (!BindingService.isBindable(bindTarget, bindTargetKey))
             throw new Error(BIND_TARGET_IS_NOT_BINDABLE_MESSAGE);
         if (!BindingService.isInitialisedBindable(bindTarget, bindTargetKey))
-            throw new Error(BIND_TARGET_IS_NOT_INITIALISED_MESSAGE);
+            BindingService.initBindable(bindTarget, bindTargetKey);
         if (bindProps.bindMode === BindModes.TwoWay && bindProps.bindTransform)
             throw new Error(TWO_WAY_BINDINGS_DO_NOT_SUPPORT_BIND_TRANSFORMS_MESSAGE);
 
@@ -370,6 +370,13 @@ export abstract class BindingService {
             }
         }
 
+        Object.defineProperty(target, key, {
+            value: target[key],
+            configurable: true,
+            enumerable: true,
+            writable: true
+        });
+
         const metadata: IBindableMetadata = {
             key,
             type
@@ -394,6 +401,13 @@ export abstract class BindingService {
                 HAS_WARNED_ABOUT_MISSING_TYPE_ANNOTATIONS = true;
             }
         }
+
+        Object.defineProperty(target, key, {
+            value: target[key],
+            configurable: true,
+            enumerable: true,
+            writable: true
+        });
 
         bindProps = bindProps || { bindMode: undefined, bindTransform: undefined, bindAction: undefined };
         const metadata: IBindMetadata = {
